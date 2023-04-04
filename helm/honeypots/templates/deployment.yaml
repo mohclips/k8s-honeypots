@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{.Values.app.name}}
+  namespace: {{ .Release.Namespace }} # picked up from Skaffold yaml
+  labels:
+    app: {{.Values.app.name}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: {{.Values.app.name}}
+  template:
+    metadata:
+      labels:
+        name: {{.Values.app.name}}
+        app.kubernetes.io/name: {{.Values.app.name}}
+    spec:
+      tolerations:
+      # these tolerations are to have the daemonset runnable on control plane nodes
+      # remove them if your control plane nodes should not run pods
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: {{.Values.app.name}}
+        image: {{.Values.app.image}}
+        command:
+          - /bin/sh
+        args:
+          - "-c"
+          - "python3 -m honeypots --setup mysql,smb,ftp,postgres,redis,ssh,elastic,rdp,telnet,vnc --config ./config.json --termination-strategy signal --verbose"
+          - ">> /proc/1/fd/1"
+        ports:
+          - containerPort: 3306
+            name: mysql
+          - containerPort: 445
+            name: smb
+          - containerPort: 21
+            name: ftp
+          - containerPort: 5432
+            name: postgres
+          - containerPort: 6379
+            name: redis
+          - containerPort: 22
+            name: ssh
+          - containerPort: 9200
+            name: elastic
+          - containerPort: 3389
+            name: rdp
+          - containerPort: 23
+            name: telnet
+          - containerPort: 5900
+            name: vnc
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+
+

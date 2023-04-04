@@ -1,0 +1,30 @@
+---
+apiVersion: skaffold/v4beta2
+kind: Config
+
+build:
+  artifacts:
+    - image: private-repo:5000/honeypots
+      context: .
+      docker:
+        dockerfile: Dockerfile
+        cacheFrom:
+        - private-repo:5000/honeypots
+  #local: # this breaks minikube push, turned off, it works
+    #push: true
+    #useDockerCLI: true
+  tagPolicy:
+    sha256: {}  # enables a 'latest' tag
+
+deploy:
+  helm:
+    releases:
+      - name: honeypots
+        namespace: honeypots
+        createNamespace: true
+        chartPath: helm/honeypots
+        setValues:
+          app:
+            name: honeypots
+            image: private-repo:5000/honeypots:latest
+

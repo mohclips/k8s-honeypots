@@ -1,0 +1,25 @@
+spec:
+  template:
+    spec:
+      # https://minikube.sigs.k8s.io/docs/tutorials/nginx_tcp_udp_ingress/
+      containers:
+      - name: controller
+        ports:
+        - containerPort: 21
+          hostPort: 21
+        - containerPort: 22
+          hostPort: 22
+        - containerPort: 23
+          hostPort: 23
+        - containerPort: 445
+          hostPort: 445
+        - containerPort: 3306
+          hostPort: 3306
+        - containerPort: 5432
+          hostPort: 5432
+        - containerPort: 5900
+          hostPort: 5900
+        - containerPort: 6379
+          hostPort: 6379
+        - containerPort: 9200
+          hostPort: 9200

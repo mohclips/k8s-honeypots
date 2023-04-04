@@ -1,0 +1,3 @@
+app:
+  name: honeypots
+  image: private-repo:5000/honeypots:latest
