@@ -2,7 +2,7 @@
 
 Based on:  https://github.com/qeeqbox/honeypots
 
-How i set up a private repo, minikube and minikube ingest to test the qeeqbox honeypots.
+How i set up a private docker repo, minikube and minikube ingest to test the qeeqbox honeypots.
 
 
 # set up a local private docker registry
@@ -25,7 +25,7 @@ eg. https://r2schools.com/how-to-install-docker-on-ubuntu/
 $ docker run -d -p 5000:5000 --restart always --name registry registry:2
 ```
 
-### add a private-repo IP address as localhost
+### add the private-repo IP address as localhost
 ```
 # vi /etc/hosts
 127.0.0.1       localhost private-repo
@@ -67,60 +67,19 @@ $ skaffold run
 At this point you can only access the honeypots from inside the cluster.
 
 ```
-$ mk -n honeypots get deployment honeypots -ojson | jq '.spec.template.spec.containers[0].ports'
+$ mk -n honeypots get deployment honeypots -ojson | jq '.spec.template.spec.containers[0].ports' | jq -r '(map(keys) | add | unique) as $cols | map(. as $row | $cols | map($row[.])) as $rows | $cols, $rows[] | @csv' 
+"containerPort","name","protocol"
+3306,"mysql","TCP"
+445,"smb","TCP"
+21,"ftp","TCP"
+5432,"postgres","TCP"
+6379,"redis","TCP"
+22,"ssh","TCP"
+9200,"elastic","TCP"
+3389,"rdp","TCP"
+23,"telnet","TCP"
+5900,"vnc","TCP"
 
-[
-  {
-    "containerPort": 3306,
-    "name": "mysql",
-    "protocol": "TCP"
-  },
-  {
-    "containerPort": 445,
-    "name": "smb",
-    "protocol": "TCP"
-  },
-  {
-    "containerPort": 21,
-    "name": "ftp",
-    "protocol": "TCP"
-  },
-  {
-    "containerPort": 5432,
-    "name": "postgres",
-    "protocol": "TCP"
-  },
-  {
-    "containerPort": 6379,
-    "name": "redis",
-    "protocol": "TCP"
-  },
-  {
-    "containerPort": 22,
-    "name": "ssh",
-    "protocol": "TCP"
-  },
-  {
-    "containerPort": 9200,
-    "name": "elastic",
-    "protocol": "TCP"
-  },
-  {
-    "containerPort": 3389,
-    "name": "rdp",
-    "protocol": "TCP"
-  },
-  {
-    "containerPort": 23,
-    "name": "telnet",
-    "protocol": "TCP"
-  },
-  {
-    "containerPort": 5900,
-    "name": "vnc",
-    "protocol": "TCP"
-  }
-]
 ```
 
 ```
@@ -132,22 +91,26 @@ $ mk -n honeypots get po -ojson | jq '.items[0].status | .podIP'
 
 ## setup minikube ingest
 
+Based on: https://minikube.sigs.k8s.io/docs/tutorials/nginx_tcp_udp_ingress/
+
 ```
 $ minikube addons enable ingress
 
 $ mk -n ingress-nginx apply -f minikube-ingress-configmap.yaml
 
-$ mk patch deployment ingress-nginx-controller --patch "$(cat minikube-ingress-nginx-controller-patch.yaml)" -n ingress-nginx
+$ mk -n ingress-nginx patch deployment ingress-nginx-controller --patch "$(cat minikube-ingress-nginx-controller-patch.yaml)" 
 ```
 
 # Test
 
-## get miniube ip
+## get minikube ip
 
 ```
 $ minikube ip
 192.168.49.2
 ```
+
+## test ssh
 
 ```
 $ ssh 192.168.49.2
@@ -158,6 +121,8 @@ Warning: Permanently added '192.168.49.2' (RSA) to the list of known hosts.
 Connection to 192.168.49.2 closed.
 
 ```
+
+## check logs
 
 ```
 $ mk -n honeypots logs deployment/honeypots --follow
